@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 '''
 Author: Zawar Ahmed Tahir
-Date: 29-01-2019, Tuesday
+Date: 09-03-2019, Saturday
 '''
 #ZAT#
 from tkinter import *
 from tkinter import font
 import RPi.GPIO as GPIO
 import time
+import serial
+import math
+ser=serial.Serial('/dev/ttyACM0',9600)
 GPIO.setwarnings(False)
 st=1
 motor_counter = 0
 ampere = 0
-ampere_limit = 90
+ampere_limit = 3
 b1, b2, b3, b4 = "red", "red", "red", "red"
 limit = 12
 button_row = 2
@@ -77,6 +80,7 @@ if(st==1):
     GPIO.output(16, 1)
     GPIO.output(20, 1)
     GPIO.output(21, 1)
+    GPIO.output(27, 1)
     st=0
         
 
@@ -248,6 +252,7 @@ def m11_on_off():
         GPIO.output(13, 0)
         print("M11 ON")
         motor_counter = motor_counter + 1
+        GPIO.output(20, 1)
         m11_button["background"] = "#7CFC00"
     elif (m11_button["background"] == "#7CFC00"):
         GPIO.output(13, 1)
@@ -492,13 +497,13 @@ def exitProgram():
         print(ID)
         pwd = E2.get()
         print(pwd)
-        if (E1.get() == "" and E2.get() == ""):
+        if (E1.get() == "thetools" and E2.get() == "03462791445"):
             GPIO.cleanup()
             time.sleep(2)
             win.destroy()
         print("exit")
 
-    backButton = Button(top, text="Exit", font=myFont, command=exitProgram, height=1, width=5)
+    backButton = Button(top, text="Setting", font=myFont, command=exitProgram, height=1, width=5)
     backButton.grid(row=2, column=1, padx=(65, 10), pady=4)
     
     
@@ -506,23 +511,31 @@ import time
     
 def sysOff():
     GPIO.cleanup()
-    time.sleep(2)
+   # time.sleep(2)
     win.destroy()
     call("sudo shutdown -h now",shell=True)
     print("off")
     
 myFontCurr = font.Font(family='Helvetica', size=15, weight='bold')
 
+ct=0
 def current():
     global ampere
-    if GPIO.input(27):
-        stri = "Ampere: HIGH"
-        ampere=95
-        print("TRUE")
+    global ct
+    am=ser.readline()
+    am=am.decode('utf-8')[:4]
+    print(am)
+    ampere=math.floor(float(am))
+    if(ampere>0):
+        ampere=ampere-1
+    print("ampere=",ampere)
+    if(ct==0):
+        time.sleep(2)
+        ct=1
+    if("0.0" in str(am)):
+        stri="Wait"
     else:
-        stri = "Ampere: LOW"
-        ampere=85
-        print("FALSE")
+        stri="Ampere: "+ str(ampere)
     w = Label(win, text=stri, font=myFontCurr)
     w.grid(row=3, column=5, padx=(4, 30), pady=(90,10))
 
@@ -542,7 +555,7 @@ def current():
     w.after(250, current)
 
 
-win.title("Cont:")
+win.title("Cont: 0346-2791445")
 #win.geometry('800x480')
 RWidth=win.winfo_screenwidth()
 RHeight=win.winfo_screenheight()
@@ -656,8 +669,3 @@ w.place(x = 70, y = 565)
 current()
     
 win.mainloop()
-
-
-
-
-
