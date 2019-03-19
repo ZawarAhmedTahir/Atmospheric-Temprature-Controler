@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''
 Author: Zawar Ahmed Tahir
-Date: 09-03-2019, Saturday
+Date: 19-03-2019, Tuesday
 '''
 #ZAT#
 from tkinter import *
@@ -15,7 +15,11 @@ GPIO.setwarnings(False)
 st=1
 motor_counter = 0
 ampere = 0
-ampere_limit = 3
+with open("/home/pi/Documents/amp.txt",'r') as myfile:
+    data=myfile.read().replace('\n','')
+    
+ampere_limit = int(data)
+print(ampere_limit)
 b1, b2, b3, b4 = "red", "red", "red", "red"
 limit = 12
 button_row = 2
@@ -470,19 +474,23 @@ def m24_on_off():
     print(motor_counter)
 
 from subprocess import call
+num_run=0
+btn_funcid=0
+text_=""
 def exitProgram():
     print("Exit Button pressed")
     top = Toplevel(win)
+    
     top.lift(aboveThis=win)
     #top.attributes("-topmost",True)
     L1 = Label(top, text="User Name")
     L1.grid(row=0, column=0, padx=(4, 4), pady=4)
     E1 = Entry(top, bd=5)
-    E1.grid(row=0, column=1, padx=(4, 30), pady=4)
+    E1.grid(row=0, column=1, padx=(4, 10), pady=4)
     L1 = Label(top, text="Password")
     L1.grid(row=1, column=0, padx=(4, 4), pady=4)
     E2 = Entry(top, bd=5, show="*")
-    E2.grid(row=1, column=1, padx=(4, 30), pady=4)
+    E2.grid(row=1, column=1, padx=(4, 10), pady=4)
     myFont = font.Font(family='Helvetica', size=8, weight='bold')
     
     def back():
@@ -490,7 +498,7 @@ def exitProgram():
         print("Back")
 
     exitButton = Button(top, text="Back", font=myFont, command=back, height=1, width=5)
-    exitButton.grid(row=2, column=0, padx=(40, 10), pady=4)
+    exitButton.grid(row=2, column=0, padx=(5, 5), pady=4)
 
     def exitProgram():
         ID = E1.get()
@@ -504,7 +512,83 @@ def exitProgram():
         print("exit")
 
     backButton = Button(top, text="Setting", font=myFont, command=exitProgram, height=1, width=5)
-    backButton.grid(row=2, column=1, padx=(65, 10), pady=4)
+    #backButton.grid(row=2, column=2, padx=(0, 0), pady=4)
+    backButton.place(x=200,y=76)
+    
+    def changeAmp():
+        if (E1.get() == "thetools" and E2.get() == "03462791445"):
+            ampWin = Toplevel(top)
+            ampWin.lift()
+            ampWin.geometry("120x170")
+            from functools import partial
+
+            def saveFile(amp):
+                global ampere_limit
+                with open('/home/pi/Documents/amp.txt', 'w') as the_file:
+                    the_file.write(amp)
+                ampere_limit = int(amp)
+
+            def click(btn):
+                global num_run, text_
+
+                text = "%s" % btn
+                if not text == "Del" and not text == "Save":
+                    text_ = text_ + btn
+                    print(text_)
+                    e.insert(END, text)
+                if text == 'Del':
+                    text_ = ""
+                    e.delete(0, END)
+                if text == 'Save':
+                    if(len(text_)>0):
+                        saveFile(text_)
+                        text_ = ""
+                        ampWin.destroy()
+                        num_run = 0
+                    # win.unbind('<Button-1>', btn_funcid)
+
+            def close():
+                global num_run, btn_funcid
+                if num_run == 1:
+                    ampWin.destroy()
+                    num_run = 0
+                    ampWin.unbind('<Button-1>', btn_funcid)
+
+            def run():
+                global num_run, btn_funcid
+                if num_run == 0:
+                    num_run = 1
+                    btn_funcid = win.bind('<Button-1>', close)
+
+            e = Entry(ampWin, font='Verdana  8 bold',width=11, justify='right', bd=3)
+            e.grid(row=0, column=0, padx=(1, 1), pady=4)
+
+            lf = LabelFrame(ampWin, text=" Ampere ", bd=3)
+            lf.grid(padx=(1, 1), pady=(35, 5))
+
+            btn_list = [
+                '7', '8', '9',
+                '4', '5', '6',
+                '1', '2', '3',
+                '0', 'Del', 'Save']
+            r = 1
+            c = 0
+            n = 0
+            btn = list(range(len(btn_list)))
+            for label in btn_list:
+                cmd = partial(click, label)
+                btn[n] = Button(lf, text=label, width=1, height=1, command=cmd)
+                btn[n].grid(row=r, column=c)
+                n += 1
+                c += 1
+                if c == 3:
+                    c = 0
+                    r += 1
+            e.bind('<Button-1>', run)
+            e.place(x=10, y=10)
+    changeAmpere = Button(top, text="Ampere", font=myFont, command=changeAmp, height=1, width=5)
+    #changeAmpere.grid(row=2, column=1, padx=(0, 0), pady=4)
+    changeAmpere.place(x=105, y=76)
     
     
 import time  
@@ -522,6 +606,7 @@ ct=0
 def current():
     global ampere
     global ct
+    print(ampere_limit)
     am=ser.readline()
     am=am.decode('utf-8')[:4]
     print(am)
@@ -669,3 +754,8 @@ w.place(x = 70, y = 565)
 current()
     
 win.mainloop()
+
+
+
+
+
