@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''
 Author: Zawar Ahmed Tahir
-Date: 19-03-2019, Tuesday
+Date: 20-03-2019, Wednesday
 '''
 #ZAT#
 from tkinter import *
@@ -10,7 +10,7 @@ import RPi.GPIO as GPIO
 import time
 import serial
 import math
-ser=serial.Serial('/dev/ttyACM0',9600)
+ser=serial.Serial('/dev/ttyACM0',115200)
 GPIO.setwarnings(False)
 st=1
 motor_counter = 0
@@ -516,10 +516,10 @@ def exitProgram():
     backButton.place(x=200,y=76)
     
     def changeAmp():
-        if (E1.get() == "thetools" and E2.get() == "03462791445"):
+        if (E1.get() == "thetools" and E2.get() == "alrahim"):
             ampWin = Toplevel(top)
             ampWin.lift()
-            ampWin.geometry("120x170")
+            ampWin.geometry("140x220")
             from functools import partial
 
             def saveFile(amp):
@@ -577,7 +577,7 @@ def exitProgram():
             btn = list(range(len(btn_list)))
             for label in btn_list:
                 cmd = partial(click, label)
-                btn[n] = Button(lf, text=label, width=1, height=1, command=cmd)
+                btn[n] = Button(lf, text=label, width=2, height=2, command=cmd)
                 btn[n].grid(row=r, column=c)
                 n += 1
                 c += 1
@@ -603,41 +603,59 @@ def sysOff():
 myFontCurr = font.Font(family='Helvetica', size=15, weight='bold')
 
 ct=0
+stri=""
 def current():
+    global stri
     global ampere
     global ct
     print(ampere_limit)
-    am=ser.readline()
-    am=am.decode('utf-8')[:4]
-    print(am)
-    ampere=math.floor(float(am))
-    if(ampere>0):
-        ampere=ampere-1
-    print("ampere=",ampere)
-    if(ct==0):
-        time.sleep(2)
-        ct=1
-    if("0.0" in str(am)):
-        stri="Wait"
-    else:
-        stri="Ampere: "+ str(ampere)
-    w = Label(win, text=stri, font=myFontCurr)
-    w.grid(row=3, column=5, padx=(4, 30), pady=(90,10))
-
-    '''
-    if (ampere < 10):
-        stri = "Ampere: 0" + str(ampere)
-    elif (ampere >= 10):
-        stri = "Ampere: " + str(ampere)
     
-    
-    # w.pack(side=RIGHT)
-    if (ampere == 99):
-        # time.sleep(5)
-        ampere = 0
-    ampere = ampere + 1
-    '''
-    w.after(250, current)
+   # ampere=math.floor(float(am))
+    try:
+        am=ser.readline()
+        
+        
+        
+        if("wa" in  str(am)):
+            #stri="Wait"
+            k = Label(win, text="  Wait  ", font=myFontCurr)
+            k.grid(row=3, column=5, padx=(4, 30), pady=(90,10))
+            k.after(10, current)
+        else:
+            am=am.decode('utf-8')[:14]
+            am_=am.split(" ")
+            print(am_)
+            if(len(am_)==3):
+                try:
+                    print(am_)
+                    ampere=max(float(am_[0]),float(am_[1]),float(am_[2]))
+                    print("R: ",float(am_[0]),"Y: ",float(am_[1]),"B: ",float(am_[2]))
+                except:
+                    am_=["0.01","0.01","0.01"]
+        #if(ampere>0):
+        #ampere=ampere-1
+            #print("ampere=",ampere)
+                stri="R: "+am_[0]+"Y: "+am_[1]+"B: "+am_[2]
+                w = Label(win, text=" R: "+am_[0]+" ", font=myFontCurr)
+                w.grid(row=3, column=3, padx=(4, 30), pady=(90,10))
+                w = Label(win, text=" Y: "+am_[1]+" ", font=myFontCurr)
+                w.grid(row=3, column=4, padx=(4, 30), pady=(90,10))
+                w = Label(win, text=" B: "+am_[2]+" ", font=myFontCurr)
+                w.grid(row=3, column=5, padx=(4, 30), pady=(90,10))
+                w.after(50, current)
+            else:
+                w = Label(win, text="  Wait  ", font=myFontCurr)
+                w.grid(row=3, column=3, padx=(4, 30), pady=(90,10))
+                w = Label(win, text="  Wait  " ,font=myFontCurr)
+                w.grid(row=3, column=4, padx=(4, 30), pady=(90,10))
+                w = Label(win, text="  Wait  ", font=myFontCurr)
+                w.grid(row=3, column=5, padx=(4, 30), pady=(90,10))
+                w.after(10, current)
+    except:
+        print("exception")
+        x = Label(win, text="E", font=myFontCurr)
+        x.grid(row=3, column=5, padx=(4, 30), pady=(90,10))
+        x.after(10, current)
 
 
 win.title("Cont: 0346-2791445")
@@ -754,8 +772,3 @@ w.place(x = 70, y = 565)
 current()
     
 win.mainloop()
-
-
-
-
-
