@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''
 Author: Zawar Ahmed Tahir
-Date: 10-05-2019, Friday
+Date: 19-05-2019, Sunday
 '''
 #ZAT#
 from tkinter import *
@@ -10,18 +10,18 @@ import RPi.GPIO as GPIO
 import time
 import serial
 import math
-ser=serial.Serial('/dev/ttyACM0',115200)
+ser=serial.Serial('/dev/ttyACM0',115200)#arduino port ACM1 if crash
 GPIO.setwarnings(False)
 st=1
 motor_counter = 0
-ampere = 0
+ampere = 0.0
 with open("/home/pi/Documents/amp.txt",'r') as myfile:
     data=myfile.read().replace('\n','')
     
 ampere_limit = int(data)
 print(ampere_limit)
 b1, b2, b3, b4 = "red", "red", "red", "red"
-limit = 12
+limit = 12 #pumpLimit
 button_row = 2
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(2, GPIO.OUT)
@@ -601,174 +601,209 @@ def sysOff():
     print("off")
     
 myFontCurr = font.Font(family='Helvetica', size=15, weight='bold')
+from multiprocessing import Queue
+from multiprocessing import Process
+inputQueue=Queue(maxsize=1)
+outputQueue=Queue(maxsize=1)
+
+ampQueue=Queue(maxsize=1)
 
 ct=0
+var=StringVar()
+var.set("wait")
 stri=""
-def current():
+w = Label(win, textvariable=var, font=myFontCurr)
+w.place(x=700,y=95)
+def current(net,outputQueue):
+    #global outputQueue
     global stri
-    global ampere
-    global ct
-    print(ampere_limit)
     
-   # ampere=math.floor(float(am))
-    try:
-        am=ser.readline()
+    while True:
         
         
         
-        if("wa" in  str(am)):
-            #stri="Wait"
-            k = Label(win, text="  Wait  ", font=myFontCurr)
-            k.grid(row=3, column=5, padx=(4, 30), pady=(90,10))
-            k.after(10, current)
-        else:
-            am=am.decode('utf-8')[:14]
-            am_=am.split(" ")
-            print(am_)
-            if(len(am_)==3):
-                try:
-                    print(am_)
-                    ampere=max(float(am_[0]),float(am_[1]),float(am_[2]))
-                    print("R: ",float(am_[0]),"Y: ",float(am_[1]),"B: ",float(am_[2]))
-                except:
-                    am_=["0.01","0.01","0.01"]
-        #if(ampere>0):
-        #ampere=ampere-1
-            #print("ampere=",ampere)
-                stri="R: "+am_[0]+"Y: "+am_[1]+"B: "+am_[2]
-                w = Label(win, text=" R: "+am_[0]+" ", font=myFontCurr)
-                w.grid(row=3, column=3, padx=(4, 30), pady=(90,10))
-                w = Label(win, text=" Y: "+am_[1]+" ", font=myFontCurr)
-                w.grid(row=3, column=4, padx=(4, 30), pady=(90,10))
-                w = Label(win, text=" B: "+am_[2]+" ", font=myFontCurr)
-                w.grid(row=3, column=5, padx=(4, 30), pady=(90,10))
-                w.after(50, current)
+        try:
+            am=ser.readline()
+            print(am)
+            
+            
+            
+            if("wa" in  str(am)):
+                stri="               wait                    "
+                
             else:
-                w = Label(win, text="  Wait  ", font=myFontCurr)
-                w.grid(row=3, column=3, padx=(4, 30), pady=(90,10))
-                w = Label(win, text="  Wait  " ,font=myFontCurr)
-                w.grid(row=3, column=4, padx=(4, 30), pady=(90,10))
-                w = Label(win, text="  Wait  ", font=myFontCurr)
-                w.grid(row=3, column=5, padx=(4, 30), pady=(90,10))
-                w.after(10, current)
-    except:
-        print("exception")
-        x = Label(win, text="E", font=myFontCurr)
-        x.grid(row=3, column=5, padx=(4, 30), pady=(90,10))
-        x.after(10, current)
-
-
-win.title("Cont: 0346-2791445")
-#win.geometry('800x480')
-RWidth=win.winfo_screenwidth()
-RHeight=win.winfo_screenheight()
-win.wm_attributes("-type",'splash')
-win.wm_attributes("-fullscreen",True)
-#win.overrideredirect(True)
-win.geometry(("%dx%d")%(RWidth,RHeight+20))
-win.resizable(False, False)
-text = Text(win)
-
-
-headerFont= font.Font(family = 'Helvetica', size = 22, weight = 'bold')
-w = Label(win, text="AL-RAHIM CONTROLLED ATMOSPHERIC STORAGE (PVT.)", font=headerFont)
-#w = Label(win, text="          CONTROLLED ATMOSPHERIC STORAGE (PVT.)", font=headerFont)
-
-w.grid(row=1, column=2, padx=(4, 4), pady=(40,4))
-w.place(x = 100, y = 40)
-
-m1_button = Button(win, text="Pump: 1", font=myFont, command=m1_on_off, height=2, width=8, bg=b1)
-m1_button.grid(row=button_row + 2, column=0, padx=10, pady=20)
-
-m2_button = Button(win, text="Pump: 2", font=myFont, command=m2_on_off, height=2, width=8, bg=b2)
-m2_button.grid(row=button_row + 2, column=1, padx=20, pady=6)
-
-m3_button = Button(win, text="Pump: 3", font=myFont, command=m3_on_off, height=2, width=8, bg=b2)
-m3_button.grid(row=button_row + 2, column=2, padx=20, pady=6)
-
-m4_button = Button(win, text="Pump: 4", font=myFont, command=m4_on_off, height=2, width=8, bg=b2)
-m4_button.grid(row=button_row + 2, column=3, padx=20, pady=6)
-
-m5_button = Button(win, text="Pump: 5", font=myFont, command=m5_on_off, height=2, width=8, bg=b2)
-m5_button.grid(row=button_row + 2, column=4, padx=20, pady=6)
-
-m6_button = Button(win, text="Pump: 6", font=myFont, command=m6_on_off, height=2, width=8, bg=b1)
-m6_button.grid(row=button_row + 2, column=5, padx=(16,35), pady=6)
-
-
-m7_button = Button(win, text="Pump: 7", font=myFont, command=m7_on_off, height=2, width=8, bg=b2)
-m7_button.grid(row=button_row + 3, column=0, padx=10, pady=6)
-
-m8_button = Button(win, text="Pump: 8", font=myFont, command=m8_on_off, height=2, width=8, bg=b2)
-m8_button.grid(row=button_row + 3, column=1, padx=20, pady=6)
-
-m9_button = Button(win, text="Pump: 9", font=myFont, command=m9_on_off, height=2, width=8, bg=b2)
-m9_button.grid(row=button_row + 3, column=2, padx=20, pady=6)
-
-m10_button = Button(win, text="Pump: 10", font=myFont, command=m10_on_off, height=2, width=8, bg=b2)
-m10_button.grid(row=button_row + 3, column=3, padx=20, pady=6)
-
-m11_button = Button(win, text="Pump: 11", font=myFont, command=m11_on_off, height=2, width=8, bg=b1)
-m11_button.grid(row=button_row + 3, column=4, padx=20, pady=6)
-
-m12_button = Button(win, text="Pump: 12", font=myFont, command=m12_on_off, height=2, width=8, bg=b2)
-m12_button.grid(row=button_row + 3, column=5, padx=(16,35), pady=6)
-
-m13_button = Button(win, text="Pump: 13", font=myFont, command=m13_on_off, height=2, width=8, bg=b2)
-m13_button.grid(row=button_row + 4, column=0, padx=20, pady=10)
-
-m14_button = Button(win, text="Pump: 14", font=myFont, command=m14_on_off, height=2, width=8, bg=b2)
-m14_button.grid(row=button_row + 4, column=1, padx=20, pady=6)
-
-m15_button = Button(win, text="Pump: 15", font=myFont, command=m15_on_off, height=2, width=8, bg=b2)
-m15_button.grid(row=button_row + 4, column=2, padx=20, pady=6)
-
-m16_button = Button(win, text="Pump: 16", font=myFont, command=m16_on_off, height=2, width=8, bg=b1)
-m16_button.grid(row=button_row + 4, column=3, padx=20, pady=6)
-
-m17_button = Button(win, text="Pump: 17", font=myFont, command=m17_on_off, height=2, width=8, bg=b2)
-m17_button.grid(row=button_row + 4, column=4, padx=20, pady=6)
-
-m18_button = Button(win, text="Pump: 18", font=myFont, command=m18_on_off, height=2, width=8, bg=b2)
-m18_button.grid(row=button_row + 4, column=5, padx=(16,35), pady=6)
-
-m19_button = Button(win, text="Pump: 19", font=myFont, command=m19_on_off, height=2, width=8, bg=b2)
-m19_button.grid(row=button_row + 5, column=0, padx=20, pady=10)
-
-m20_button = Button(win, text="Pump: 20", font=myFont, command=m20_on_off, height=2, width=8, bg=b2)
-m20_button.grid(row=button_row + 5, column=1, padx=20, pady=4)
-
-m21_button = Button(win, text="Pump: 21", font=myFont, command=m21_on_off, height=2, width=8, bg=b2)
-m21_button.grid(row=button_row + 5, column=2, padx=20, pady=4)
-
-
-m22_button = Button(win, text="Pump: 22", font=myFont, command=m22_on_off, height=2, width=8, bg=b2)
-m22_button.grid(row=button_row + 5, column=3, padx=20, pady=4)
-
-m23_button = Button(win, text="Pump: 23", font=myFont, command=m23_on_off, height=2, width=8, bg=b2)
-m23_button.grid(row=button_row + 5, column=4, padx=20, pady=4)
-
-m24_button = Button(win, text="Pump: 24", font=myFont, command=m24_on_off, height=2, width=8, bg=b2)
-m24_button.grid(row=button_row + 5, column=5, padx=(16,35), pady=4)
-
-photo=PhotoImage(file="/home/pi/Documents/tool.png")
-photo = photo.subsample(4, 4)
-b = Button(win,image=photo, command=exitProgram,height=30, width=165)
-b.place(x=840,y=560)
-
-pow=PhotoImage(file="/home/pi/Documents/power.png")
-pow = pow.subsample(5, 5)
-pw = Button(win,image=pow, command=sysOff,height=50, width=50)
-pw.place(x=20,y=80)
-
-footerFont= font.Font(family = 'Helvetica', size = 14, weight = 'bold')
-w = Label(win, text="Talha Ahmed, Contractor and supplier. Contact: 0333-3394352, 0346-2791445",fg="grey", font=footerFont)
-
-w.grid(row=1, column=2, padx=(4, 4), pady=4)
-w.place(x = 70, y = 565)
-
-
-
-current()
+                am=am.decode('utf-8')[:14]
+                am_=am.split(" ")
+                
+                if(len(am_)==3):
+                    try:
+                        ampere=max(float(am_[0]),float(am_[1]),float(am_[2]))
+                        print(ampere)
+                        ampQueue.put(ampere)
+                        
+                        #print("R: ",float(am_[0]),"Y: ",float(am_[1]),"B: ",float(am_[2]))
+                    except:
+                        am_=["0.01","0.01","0.01"]
+            
+                    stri="R: "+am_[0]+"  Y: "+am_[1]+"  B: "+am_[2]
+                    
+                    
+                else:
+                    stri="               wait                    "
+                    
+                    
+        except:
+            print("exception")
+            stri="               wait                    "
+            
+            
+        
+        #stri="0.03"
+        print("pos",stri)
+        
+        
+        outputQueue.put(stri)
+        #pam=outputQueue.get()
+        
     
-win.mainloop()
+
+#stri="0.02"
+
+def cur():
+    pam=""
+    global ampere
+    #global outputQueue
+    if not outputQueue.empty():
+        pam=outputQueue.get()
+        
+        ampere=ampQueue.get()
+        print("ampere :",ampere)
+        var.set(pam)
+    #w = Label(win, text=" "+pam+" ", font=myFontCurr)
+    #w.place(x=700,y=95)
+    w.after(15, cur)
+    
+
+if __name__ == '__main__':
+    global stri
+    
+    win.title("Cont: 0346-2791445")
+    #win.geometry('800x480')
+    RWidth=win.winfo_screenwidth()
+    RHeight=win.winfo_screenheight()
+    win.wm_attributes("-type",'splash')
+    win.wm_attributes("-fullscreen",True)
+    #win.overrideredirect(True)
+    win.geometry(("%dx%d")%(RWidth,RHeight+20))
+    win.resizable(False, False)
+    text = Text(win)
+    p=Process(target=current,args=(1,outputQueue,))
+    p.start()
+        
+    if(1==1):
+
+        headerFont= font.Font(family = 'Helvetica', size = 22, weight = 'bold')
+        w = Label(win, text="AL-RAHIM CONTROLLED ATMOSPHERIC STORAGE (PVT.)", font=headerFont)
+        #w = Label(win, text="          CONTROLLED ATMOSPHERIC STORAGE (PVT.)", font=headerFont)
+
+        w.grid(row=1, column=2, padx=(4, 4), pady=(40,4))
+        w.place(x = 100, y = 40)
+
+        m1_button = Button(win, text="Pump: 1", font=myFont, command=m1_on_off, height=2, width=8, bg=b1)
+        m1_button.grid(row=button_row + 2, column=0, padx=10, pady=20)
+
+        m2_button = Button(win, text="Pump: 2", font=myFont, command=m2_on_off, height=2, width=8, bg=b2)
+        m2_button.grid(row=button_row + 2, column=1, padx=20, pady=6)
+
+        m3_button = Button(win, text="Pump: 3", font=myFont, command=m3_on_off, height=2, width=8, bg=b2)
+        m3_button.grid(row=button_row + 2, column=2, padx=20, pady=6)
+
+        m4_button = Button(win, text="Pump: 4", font=myFont, command=m4_on_off, height=2, width=8, bg=b2)
+        m4_button.grid(row=button_row + 2, column=3, padx=20, pady=6)
+
+        m5_button = Button(win, text="Pump: 5", font=myFont, command=m5_on_off, height=2, width=8, bg=b2)
+        m5_button.grid(row=button_row + 2, column=4, padx=20, pady=6)
+
+        m6_button = Button(win, text="Pump: 6", font=myFont, command=m6_on_off, height=2, width=8, bg=b1)
+        m6_button.grid(row=button_row + 2, column=5, padx=(16,35), pady=6)
+
+
+        m7_button = Button(win, text="Pump: 7", font=myFont, command=m7_on_off, height=2, width=8, bg=b2)
+        m7_button.grid(row=button_row + 3, column=0, padx=10, pady=6)
+
+        m8_button = Button(win, text="Pump: 8", font=myFont, command=m8_on_off, height=2, width=8, bg=b2)
+        m8_button.grid(row=button_row + 3, column=1, padx=20, pady=6)
+
+        m9_button = Button(win, text="Pump: 9", font=myFont, command=m9_on_off, height=2, width=8, bg=b2)
+        m9_button.grid(row=button_row + 3, column=2, padx=20, pady=6)
+
+        m10_button = Button(win, text="Pump: 10", font=myFont, command=m10_on_off, height=2, width=8, bg=b2)
+        m10_button.grid(row=button_row + 3, column=3, padx=20, pady=6)
+
+        m11_button = Button(win, text="Pump: 11", font=myFont, command=m11_on_off, height=2, width=8, bg=b1)
+        m11_button.grid(row=button_row + 3, column=4, padx=20, pady=6)
+
+        m12_button = Button(win, text="Pump: 12", font=myFont, command=m12_on_off, height=2, width=8, bg=b2)
+        m12_button.grid(row=button_row + 3, column=5, padx=(16,35), pady=6)
+
+        m13_button = Button(win, text="Pump: 13", font=myFont, command=m13_on_off, height=2, width=8, bg=b2)
+        m13_button.grid(row=button_row + 4, column=0, padx=20, pady=10)
+
+        m14_button = Button(win, text="Pump: 14", font=myFont, command=m14_on_off, height=2, width=8, bg=b2)
+        m14_button.grid(row=button_row + 4, column=1, padx=20, pady=6)
+
+        m15_button = Button(win, text="Pump: 15", font=myFont, command=m15_on_off, height=2, width=8, bg=b2)
+        m15_button.grid(row=button_row + 4, column=2, padx=20, pady=6)
+
+        m16_button = Button(win, text="Pump: 16", font=myFont, command=m16_on_off, height=2, width=8, bg=b1)
+        m16_button.grid(row=button_row + 4, column=3, padx=20, pady=6)
+
+        m17_button = Button(win, text="Pump: 17", font=myFont, command=m17_on_off, height=2, width=8, bg=b2)
+        m17_button.grid(row=button_row + 4, column=4, padx=20, pady=6)
+
+        m18_button = Button(win, text="Pump: 18", font=myFont, command=m18_on_off, height=2, width=8, bg=b2)
+        m18_button.grid(row=button_row + 4, column=5, padx=(16,35), pady=6)
+
+        m19_button = Button(win, text="Pump: 19", font=myFont, command=m19_on_off, height=2, width=8, bg=b2)
+        m19_button.grid(row=button_row + 5, column=0, padx=20, pady=10)
+
+        m20_button = Button(win, text="Pump: 20", font=myFont, command=m20_on_off, height=2, width=8, bg=b2)
+        m20_button.grid(row=button_row + 5, column=1, padx=20, pady=4)
+
+        m21_button = Button(win, text="Pump: 21", font=myFont, command=m21_on_off, height=2, width=8, bg=b2)
+        m21_button.grid(row=button_row + 5, column=2, padx=20, pady=4)
+
+
+        m22_button = Button(win, text="Pump: 22", font=myFont, command=m22_on_off, height=2, width=8, bg=b2)
+        m22_button.grid(row=button_row + 5, column=3, padx=20, pady=4)
+
+        m23_button = Button(win, text="Pump: 23", font=myFont, command=m23_on_off, height=2, width=8, bg=b2)
+        m23_button.grid(row=button_row + 5, column=4, padx=20, pady=4)
+
+        m24_button = Button(win, text="Pump: 24", font=myFont, command=m24_on_off, height=2, width=8, bg=b2)
+        m24_button.grid(row=button_row + 5, column=5, padx=(16,35), pady=4)
+
+        photo=PhotoImage(file="/home/pi/Documents/tool.png")
+        photo = photo.subsample(4, 4)
+        b = Button(win,image=photo, command=exitProgram,height=30, width=165)
+        b.place(x=840,y=560)
+
+        pow=PhotoImage(file="/home/pi/Documents/power.png")
+        pow = pow.subsample(5, 5)
+        pw = Button(win,image=pow, command=sysOff,height=50, width=50)
+        pw.place(x=20,y=80)
+        w_ = Label(win, text=" ", font=myFontCurr)
+        w_.grid(row=1, column=1, padx=(4, 30), pady=(90,10))
+
+        footerFont= font.Font(family = 'Helvetica', size = 14, weight = 'bold')
+        w = Label(win, text="Talha Ahmed, Contractor and supplier. Contact: 0333-3394352, 0346-2791445",fg="grey", font=footerFont)
+
+        w.grid(row=1, column=2, padx=(4, 4), pady=4)
+        w.place(x = 70, y = 565)
+
+    
+        #win.update()
+
+        cur()
+        
+        win.mainloop()
